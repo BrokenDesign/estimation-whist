@@ -1,0 +1,16 @@
+- player: 
+    name: "Alice"
+    play_strategy: "random"
+    bid_strategy: "random"
+- player: 
+    name: "Bob"
+    play_strategy: "random"
+    bid_strategy: "random"
+- player: 
+    name: "Charlie"
+    play_strategy: "random"
+    bid_strategy: "random"
+- player: 
+    name: "Dave"
+    play_strategy: "random"
+    bid_strategy: "random"
