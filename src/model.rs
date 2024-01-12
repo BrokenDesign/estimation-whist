@@ -120,7 +120,7 @@ impl Deck {
 
 #[derive(Debug, Clone)]
 pub struct Hand {
-    cards: Vec<Card>,
+    pub cards: Vec<Card>,
     trumps: CardSuit,
 }
 
@@ -156,11 +156,11 @@ impl Hand {
 
 #[derive(Debug, Clone)]
 pub struct Player {
-    hand: Hand,
-    estimate: usize,
-    tricks: usize,
-    play_strategy: fn(&Self, &Vec<Card>) -> Card,
-    estimate_strategy: fn(&Self, usize, Vec<usize>) -> usize,
+    pub hand: Hand,
+    pub estimate: usize,
+    pub tricks: usize,
+    pub play_strategy: fn(&mut Self, &Vec<Card>) -> Card,
+    pub estimate_strategy: fn(&mut Self, usize, &Vec<usize>) -> usize,
 }
 
 impl Player {
@@ -168,8 +168,8 @@ impl Player {
         hand: Hand,
         estimate: usize,
         tricks: usize,
-        play_strategy: fn(&Self, &Vec<Card>) -> Card,
-        estimate_strategy: fn(&Self, usize, Vec<usize>) -> usize,
+        play_strategy: fn(&mut Self, &Vec<Card>) -> Card,
+        estimate_strategy: fn(&mut Self, usize, &Vec<usize>) -> usize,
     ) -> Player {
         Player {
             hand: hand,
@@ -181,18 +181,18 @@ impl Player {
     }
 
     fn is_valid_play(&mut self, card: Card, trick: &Vec<Card>) -> bool {
-        TODO!()
+        todo!()
     }
 
     fn is_valid_estimate(&mut self, estimate: usize, estimates: &Vec<usize>) -> bool {
-        TODO!()
+        todo!()
     }
 
     pub fn play(&mut self, played_cards: &Vec<Card>) -> Card {
         (self.play_strategy)(self, played_cards)
     }
 
-    pub fn estimate(&mut self, num_cards: usize, estimates: Vec<usize>) -> usize {
+    pub fn estimate(&mut self, num_cards: usize, estimates: &Vec<usize>) -> usize {
         (self.estimate_strategy)(self, num_cards, estimates)
     }
 }
@@ -221,20 +221,63 @@ impl<'a> Round<'a> {
         self.deck.deal(&mut self.players, &mut self.num_cards);
     }
 
-    pub fn play(&mut self) {
-        log::debug!("Playing round({:?})", self.num_cards);
-        
+    pub fn bid(&mut self) {
+        let mut bids = Vec::new();
         for i in 0..self.players.len() {
-            log::debug!("{}...", i);
-            self.players[i].hand.cards = Vec::new();
+            self.players[i].estimate(self.num_cards, &bids);
         }
+    }
+
+    fn find_winner(&self, trick: &Vec<Card>) -> usize {
+        let lead_suit = trick[0].suit;
+        let mut winning_card = trick[0];
+        let mut winning_player = 0;
+        for (player, card) in trick.iter().enumerate() {
+            if card.suit == self.trumps {
+                if winning_card.suit != self.trumps {
+                    winning_card = *card;
+                    winning_player = player;
+                } else if card.value > winning_card.value {
+                    winning_card = *card;
+                    winning_player = player;
+                }
+            } else if card.suit == lead_suit {
+                if winning_card.suit != self.trumps && card.value > winning_card.value {
+                    winning_card = *card;
+                    winning_player = player;
+                }
+            }
+        }
+        winning_player
+    }
+
+    fn play_trick(&mut self) {
+        let mut trick = Vec::new();
+        for j in 0..self.players.len() {
+            let card = self.players[j].play(&self.played_cards);
+            trick.push(card);
+            self.played_cards.push(card);
+        }
+        let winner = self.find_winner(&trick);
+        self.players[winner].tricks += 1;
+        self.players.rotate_left(winner)
+    }
+
+    pub fn play(&mut self) {
+        for i in 0..self.num_cards {
+            self.play_trick();
+        }
+    }
+
+    pub fn score(&mut self) {
+        for player in self.players.iter_mut() {}
     }
 }
 
 #[derive(Debug)]
 pub struct Game {
-    players: Vec<Player>,
-    scores: Vec<usize>,
+    pub players: Vec<Player>,
+    pub scores: Vec<usize>,
 }
 
 impl Game {
@@ -248,7 +291,9 @@ impl Game {
     pub fn play_round(&mut self, num_cards: usize, trumps: CardSuit) {
         let mut round = Round::new(&mut self.players, num_cards, trumps);
         round.deal();
+        round.bid();
         round.play();
+        round.score();
         for (i, player) in round.players.iter().enumerate() {
             self.scores[i] += player.tricks + (player.estimate == player.tricks) as usize * 10;
         }

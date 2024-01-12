@@ -13,17 +13,39 @@ fn init_logging(level: &str) {
         .init();
 }
 
-fn load_players() {
-    TODO!()
+// TODO: load players from a file
+fn load_players() -> Vec<Player> {
+    vec![
+        Player::new(
+            Hand::new(Vec::new(), CardSuit::Clubs),
+            0,
+            0,
+            strat::random_card,
+            strat::random_bid,
+        ),
+        Player::new(
+            Hand::new(Vec::new(), CardSuit::Clubs),
+            0,
+            0,
+            strat::random_card,
+            strat::random_bid,
+        ),
+        Player::new(
+            Hand::new(Vec::new(), CardSuit::Clubs),
+            0,
+            0,
+            strat::random_card,
+            strat::random_bid,
+        ),
+    ]
 }
 
 fn main() {
     init_logging("debug");
-    let players = load_players(); 
-    let mut game = Game::new(
-        players: players
-        num_cards: 13,
-    );
-    game.play();
-    log::info!("FINAL SCORES: {:?}", game.scores);
+    for i in 0..10 {
+        let players = load_players();
+        let mut game = Game::new(players);
+        game.play();
+        log::info!("FINAL SCORES: {:?}", game.scores);
+    }
 }
